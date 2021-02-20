@@ -82,7 +82,9 @@
                             <h3 class="card-title">{{ $item->title ?? '' }}</h3>
 
                             <div class="card-tools">
-                                <button type="button" data-target="#editPost" data-toggle="modal" class="btn btn-tool editPost" data-edit="{{route('user_posts.edit', $item->id)}}" data-update="{{route('user_posts.update', $item->id)}}" >
+                                <button type="button" data-target="#editPost" data-toggle="modal"
+                                    class="btn btn-tool editPost" data-edit="{{ route('user_posts.edit', $item->id) }}"
+                                    data-update="{{ route('user_posts.update', $item->id) }}">
                                     <i class="fas fa-edit text-success"></i>
                                 </button>
 
@@ -110,6 +112,8 @@
 @section('page-script')
     <script>
         $('#addForm [name=des]').summernote();
+        $('#editForm [name=des]').summernote();
+        $('#addForm [name=des]').html("123");
 
         if (`{{ Session::get('success') }}`) {
             Swal.fire({
@@ -122,17 +126,22 @@
         }
 
 
-        $('.editPost').on('click', function(){
-            let editUrl = $(this).data('update');
+        $('.editPost').on('click', function() {
+            let editUrl = $(this).data('edit');
 
             $.ajax({
                 type: "GET",
                 url: editUrl,
                 dataType: "json",
-                success: function (response) {
-                    console.log(response);
+                success: function(response) {
+                    if (response.status) {
+                        $("#editForm [name=title]").val(response.data.title);
+                        $("#editForm [name=des]").html(response.data.des);
+                        $("#editForm [name=des]").trigger();
+                    }
                 }
             });
         })
+
     </script>
 @endsection

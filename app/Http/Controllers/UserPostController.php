@@ -7,6 +7,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 
 use App\Helper\EventMsg;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class UserPostController extends Controller
@@ -62,7 +63,12 @@ class UserPostController extends Controller
      */
     public function edit($id)
     {
-        //
+        $post = Post::find($id);
+
+        return response()->json([
+            'status' => true,
+            'data' => $post
+        ]);
     }
 
     /**
