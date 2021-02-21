@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashbordController;
 use App\Http\Controllers\UserPostController;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,9 @@ Route::get('/home',function(){
 
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashbord', [DashbordController::class, 'index'])->name('dashbord.index');
+    Route::get('/', [DashbordController::class, 'index'])->name('dashbord.index');
     Route::resource('user_posts', UserPostController::class);
+
+    // Comments Route -----
+    Route::post('comment/store', [CommentController::class, 'StoreComment'])->name('comment.store');
 });

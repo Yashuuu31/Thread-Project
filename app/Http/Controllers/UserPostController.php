@@ -17,10 +17,11 @@ class UserPostController extends Controller
     public $route = "user_posts";
 
     public function index()
-    {     
+    {
         $moduleName = $this->moduleName;
-        $UserPosts = Post::where('user_id', Auth::user()->id)->get();
-        return view("$this->view/index",compact('moduleName','UserPosts'));
+        $UserPosts = Post::all();
+        
+        return view("$this->view/index", compact('moduleName', 'UserPosts'));
     }
 
 
@@ -29,9 +30,9 @@ class UserPostController extends Controller
         //
     }
 
-    public function store(Request $request)
+    public function store(PostRequest $request)
     {
-        // $request->validated();
+        $request->validated();
 
         $post = new Post;
         $post->user_id = Auth::user()->id;
@@ -41,56 +42,50 @@ class UserPostController extends Controller
 
         EventMsg::SuccessMsg("Post Uploded Successfully.");
         return redirect()->route("$this->route.index");
-
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         $post = Post::find($id);
 
-        return response()->json([
-            'status' => true,
-            'data' => $post
-        ]);
+        if (Auth::user()->id == $post->user_id) {
+            return response()->json([
+                'status' => true,
+                'data' => $post
+            ]);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
+    public function update(PostRequest $request, $id)
     {
-        //
+        $request->validated();
+
+        $post = Post::find($id);
+        if (Auth::user()->id == $post->user_id) {
+            $post->title = $request->title;
+            $post->des = $request->des;
+            $post->save();
+
+            EventMsg::SuccessMsg("Post Updated Successfully.");
+            return redirect()->route("$this->route.index");
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy($id)
     {
-        //
+        $post = Post::find($id);
+        if (Auth::user()->id == $post->user_id) {
+            EventMsg::SuccessMsg("Post Deleted Successfully.");
+            $post->delete();
+            return response()->json([
+                'status' => true,
+            ]);
+        }
     }
 }
