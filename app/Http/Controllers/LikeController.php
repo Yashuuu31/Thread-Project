@@ -14,21 +14,23 @@ class LikeController extends Controller
             'post_id' => 'required|numeric',
         ]);
 
-        $isPost = Like::where('post_id', $request->post_id)->first();
-        $userIds = [];
-        if ($isPost) {
-            $userIds = explode(',', $isPost->user_ids);
-            if ($request->is_liked == 1) {
-                array_push($userIds, Auth::user()->id);
-            } else {
-                if (($key = array_search(Auth::user()->id, $userIds)) !== false) {
-                    unset($userIds[$key]);
-                }
+        $isPost = Like::where('user_id', Auth::user()->id)->where('post_id', $request->post_id)->first();
+
+        if($isPost){
+            if($request->is_liked == 1){
+                $isPost->is_liked = 1;
+            }else{
+                $isPost->is_liked = 0;
             }
-            $users = implode(',', $userIds);
-            $isPost->user_ids = $users;
             $isPost->save();
+        }else{
+            $like = new Like;
+            $like->post_id = $request->post_id;
+            $like->user_id = Auth::user()->id;
+            $like->is_liked = 1;
+            $like->save();  
         }
+        
 
         return response()->json([
             'status' => true

@@ -103,44 +103,43 @@
                             <!-- Comment & Like Find Code -->
                             @php
                                 $comments = App\Models\Comment::where('post_id', $item->id)->get();
-                                $likes = App\Models\Like::where('post_id', $item->id)->first();
-                                
+                                $likes = App\Models\Like::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
+                                $favs = App\Models\FavoritePost::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
+                                $allLikes = App\Models\Like::where('post_id', $item->id)->where('is_liked', '1')->get();
                                 $heartIcon = 'far fa-heart fa-lg';
-                                $isLiked = 'false';
-                                if ($likes) {
-                                    $likeUser = explode(',', $likes->user_ids);
-                                    if (in_array(Auth::user()->id, $likeUser)) {
+                                $starIcon = 'far fa-star fa-lg';
+                                $isLiked = '0';
+                                $likeCount = count($allLikes);
+                                if($likes){
+                                    if($likes->is_liked == 1){
+                                        $isLiked = '1';
                                         $heartIcon = 'fa fa-heart fa-lg text-danger';
-                                        $isLiked = 'true';
+                                    }
+                                }
+
+                                $isFav = '0';
+                               if($favs){
+                                    if($favs->is_fav == 1){
+                                        $isFav = '1';
+                                        $starIcon = 'fa fa-star fa-lg';
                                     }
                                 }
                                 
-                                $starIcon = 'far fa-star fa-lg';
-                                $isFav = '0';
-                                if (Auth::user()->post_saved) {
-                                    $UserFavPost = explode(',', Auth::user()->post_saved);
-                                    if (in_array($item->id, $UserFavPost)) {
-                                        $starIcon = 'fa fa-star fa-lg';
-                                        $isFav = '1';
-                                    }
-                                }
                             @endphp
 
                             <div class="card-footer">
                                 <div class="card-tools">
-                                    <button class="btn PostLike" value="{{ $isLiked }}"
+                                    <button class="btn PostLike" value="{{ $isLiked ?? ''}}"
                                         data-post="{{ $item->id ?? '' }}"><i class="{{ $heartIcon }}"></i></button>
-                                    <span class="LikeCount">{{ count($likeUser) - 1 }}</span>
+                                    <span class="LikeCount">{{ $likeCount }}</span>
 
                                     <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
                                     <span class="CommentCount">{{ count($comments) }}</span>
 
-                                    <button type="button" class="btn float-right ReadMore" data-card-widget="maximize">
-                                        <i class="fas fa-expand fa-lg"></i>
-                                    </button>
+                                    <a href="{{ route('user_posts.show', $item->id)}}" class="float-right mt-1">Read More</a>
 
-                                    <button type="button" data-post="{{ $item->id ?? '' }}" value="{{ $isFav }}" class="btn float-right PostFav">
-                                        <i class="{{ $starIcon ?? '' }}"></i>
+                                    <button type="button" data-post="{{ $item->id ?? ''}}" value="{{$isFav}}" class="btn float-right PostFav">
+                                        <i class="{{ $starIcon ?? ''}}"></i>
                                     </button>
                                 </div>
                                 <div class="container-fluid overflow-auto" style="display: none; max-height: 15em">
@@ -359,7 +358,7 @@
             let HeartIcon = $(this).find('i');
 
             console.log(IsLiked.val());
-            if (IsLiked.val() == 'false') {
+            if (IsLiked.val() == '0') {
 
                 Swal.fire({
                     title: 'Post Liked.',
@@ -384,13 +383,13 @@
                         if (response.status) {
                             HeartIcon.attr('class', 'fa fa-heart fa-lg text-danger');
                             SetLikes.text(LikeCount + 1);
-                            IsLiked.val('true');
+                            IsLiked.val('1');
                         }
                     }
                 });
             }
 
-            if (IsLiked.val() == 'true') {
+            if (IsLiked.val() == '1') {
                 Swal.fire({
                     title: 'Post Disliked.',
                     imageUrl: 'https://cdn2.iconfinder.com/data/icons/instagram-ui/48/jee-68-512.png',
@@ -413,7 +412,7 @@
                     success: function(response) {
                         if (response.status) {
                             HeartIcon.attr('class', 'far fa-heart fa-lg');
-                            IsLiked.val('false');
+                            IsLiked.val('0');
                             SetLikes.text(LikeCount - 1);
                         }
                     }
@@ -429,8 +428,7 @@
             let PostId = $(this).data('post');
             let StarIcon = $(this).find('i');
 
-            if (IsFav.val() == 0) {
-
+            if (IsFav.val() == '0') {
                 Swal.fire({
                     position: 'top-end',
                     icon: 'success',
@@ -438,12 +436,11 @@
                     showConfirmButton: false,
                     timer: 1500
                 })
-                
                 $.ajax({
                     type: "POST",
                     url: "{{ route('favorite.store') }}",
                     data: {
-                        'is_saved':0,
+                        'is_fav':1,
                         'post_id': PostId,
                         '_token': "{{ csrf_token() }}"
                     },
@@ -451,14 +448,13 @@
                     success: function (response) {
                         if(response.status){
                             StarIcon.attr("class", "fa fa-star fa-lg");
-                            IsFav.val(1);
+                            IsFav.val('1');
                         }
                     }
                 });
-
-
-                
-            } else {
+            } 
+            
+            if(IsFav.val() == '1'){
                 Swal.fire({
                     position: 'top-end',
                     icon: 'success',
@@ -466,13 +462,11 @@
                     showConfirmButton: false,
                     timer: 1500
                 })
-
-
                 $.ajax({
                     type: "POST",
                     url: "{{ route('favorite.store') }}",
                     data: {
-                        'is_saved':1,
+                        'is_fav':0,
                         'post_id': PostId,
                         '_token': "{{ csrf_token() }}"
                     },
@@ -480,7 +474,7 @@
                     success: function (response) {
                         if(response.status){
                             StarIcon.attr("class", "far fa-star fa-lg");
-                            IsFav.val(0);
+                            IsFav.val('0');
                         }
                     }
                 });
@@ -491,6 +485,8 @@
 
 
         });
+
+        // 
 
     </script>
 @endsection

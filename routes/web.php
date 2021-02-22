@@ -42,4 +42,4 @@ Route::middleware(['auth'])->group(function () {
     // Favorite Post Route ---
     Route::post('favorite/store', [PostFavController::class, 'PostFav'])->name('favorite.store');
 
-});
+}); 

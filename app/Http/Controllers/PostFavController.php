@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FavoritePost;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,20 +14,24 @@ class PostFavController extends Controller
         $request->validate([
             'post_id' => 'required|numeric',
         ]);
-        $isUser = User::find(Auth::user()->id);
-        $postIds = [];
-        if ($isUser) {
-            $postIds = explode(',', $isUser->post_saved);
-            if ($request->is_saved == 0) {
-                array_push($postIds, $request->post_id);
-            } else {
-                if (($key = array_search($request->post_id, $postIds)) !== false) {
-                    unset($postIds[$key]);
-                }
+
+        $isPost = FavoritePost::where('user_id', Auth::user()->id)->where('post_id', $request->post_id)->first();
+
+        if($isPost){
+            if($request->is_fav == 1){
+                $isPost->is_fav = 1;
+            }else{
+                $isPost->is_fav = 0;
             }
-            $isUser->post_saved = implode(',', $postIds);
-            $isUser->save();
+            $isPost->save();
+        }else{
+            $favPost = new FavoritePost;
+            $favPost->post_id = $request->post_id;
+            $favPost->user_id = Auth::user()->id;
+            $favPost->is_favs = 1;
+            $favPost->save();  
         }
+        
         
         return response()->json([
             'status' => true

@@ -41,17 +41,14 @@ class UserPostController extends Controller
         $post->des = $request->des;
         $post->save();
 
-        $createLike = new Like;
-        $createLike->post_id = $post->id;
-        $createLike->save();
-
         EventMsg::SuccessMsg("Post Uploded Successfully.");
         return redirect()->route("$this->route.index");
     }
 
     public function show($id)
     {
-        //
+        $post = Post::find($id);
+        return view("{$this->view}/detail", compact('post'));
     }
 
     public function edit($id)
