@@ -114,6 +114,16 @@
                                         $isLiked = 'true';
                                     }
                                 }
+                                
+                                $starIcon = 'far fa-star fa-lg';
+                                $isFav = '0';
+                                if (Auth::user()->post_saved) {
+                                    $UserFavPost = explode(',', Auth::user()->post_saved);
+                                    if (in_array($item->id, $UserFavPost)) {
+                                        $starIcon = 'fa fa-star fa-lg';
+                                        $isFav = '1';
+                                    }
+                                }
                             @endphp
 
                             <div class="card-footer">
@@ -127,6 +137,10 @@
 
                                     <button type="button" class="btn float-right ReadMore" data-card-widget="maximize">
                                         <i class="fas fa-expand fa-lg"></i>
+                                    </button>
+
+                                    <button type="button" data-post="{{ $item->id ?? '' }}" value="{{ $isFav }}" class="btn float-right PostFav">
+                                        <i class="{{ $starIcon ?? '' }}"></i>
                                     </button>
                                 </div>
                                 <div class="container-fluid overflow-auto" style="display: none; max-height: 15em">
@@ -293,7 +307,8 @@
             let comment_id = $(this).data('comment');
             let post_id = $(this).data('post');
             let CommentTex = $(this).parent().parent();
-            let CommentCount = parseInt($(this).parent().parent().parent().siblings('.card-tools').find('.CommentCount').text());
+            let CommentCount = parseInt($(this).parent().parent().parent().siblings('.card-tools').find(
+                '.CommentCount').text());
             let SetCommentCount = $(this).parent().parent().parent().siblings('.card-tools').find('.CommentCount');
 
             Swal.fire({
@@ -406,6 +421,75 @@
 
 
             }
+        });
+
+        // Post Favorite Code ---
+        $(document).on('click', '.PostFav', function() {
+            let IsFav = $(this);
+            let PostId = $(this).data('post');
+            let StarIcon = $(this).find('i');
+
+            if (IsFav.val() == 0) {
+
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Post Added Your Favorite List.',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+                
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('favorite.store') }}",
+                    data: {
+                        'is_saved':0,
+                        'post_id': PostId,
+                        '_token': "{{ csrf_token() }}"
+                    },
+                    dataType: "json",
+                    success: function (response) {
+                        if(response.status){
+                            StarIcon.attr("class", "fa fa-star fa-lg");
+                            IsFav.val(1);
+                        }
+                    }
+                });
+
+
+                
+            } else {
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Post Deleted Your Favorite List.',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('favorite.store') }}",
+                    data: {
+                        'is_saved':1,
+                        'post_id': PostId,
+                        '_token': "{{ csrf_token() }}"
+                    },
+                    dataType: "json",
+                    success: function (response) {
+                        if(response.status){
+                            StarIcon.attr("class", "far fa-star fa-lg");
+                            IsFav.val(0);
+                        }
+                    }
+                });
+
+                
+            }
+
+
+
         });
 
     </script>

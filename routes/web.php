@@ -3,6 +3,7 @@
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashbordController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\PostFavController;
 use App\Http\Controllers\UserPostController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -37,4 +38,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Like Route -----
     Route::post('like/store', [LikeController::class, 'PostLike'])->name('like.store');
+
+    // Favorite Post Route ---
+    Route::post('favorite/store', [PostFavController::class, 'PostFav'])->name('favorite.store');
+
 });

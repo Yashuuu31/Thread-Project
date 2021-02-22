@@ -12,16 +12,12 @@ class LikeController extends Controller
     {
         $request->validate([
             'post_id' => 'required|numeric',
-            'user_id' => 'required|numeric',
         ]);
 
         $isPost = Like::where('post_id', $request->post_id)->first();
         $userIds = [];
         if ($isPost) {
             $userIds = explode(',', $isPost->user_ids);
-            // if (!in_array(Auth::user()->id, $userIds)) {
-            //     array_push($userIds, Auth::user()->id);
-            // }
             if ($request->is_liked == 1) {
                 array_push($userIds, Auth::user()->id);
             } else {
