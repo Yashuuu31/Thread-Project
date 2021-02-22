@@ -100,32 +100,53 @@
                             <div class="card-body overflow-hidden" style="height: 160px;">
                                 {!! $item->des ?? '' !!}
                             </div>
+                            <!-- Comment & Like Find Code -->
                             @php
                                 $comments = App\Models\Comment::where('post_id', $item->id)->get();
+                                $likes = App\Models\Like::where('post_id', $item->id)->first();
+                                
+                                $heartIcon = 'far fa-heart fa-lg';
+                                $isLiked = 'false';
+                                if ($likes) {
+                                    $likeUser = explode(',', $likes->user_ids);
+                                    if (in_array(Auth::user()->id, $likeUser)) {
+                                        $heartIcon = 'fa fa-heart fa-lg text-danger';
+                                        $isLiked = 'true';
+                                    }
+                                }
                             @endphp
+
                             <div class="card-footer">
                                 <div class="card-tools">
-                                    <button class="btn"><i class="far fa-heart fa-lg"></i></button>
-                                    <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
+                                    <button class="btn PostLike" value="{{ $isLiked }}"
+                                        data-post="{{ $item->id ?? '' }}"><i class="{{ $heartIcon }}"></i></button>
+                                    <span class="LikeCount">{{ count($likeUser) - 1 }}</span>
+
+                                    <button class="btn PostComment"><i
+                                            class="far fa-comment fa-lg"></i></button>
+                                    <span class="CommentCount">{{ count($comments) }}</span>
+
                                     <button type="button" class="btn float-right ReadMore" data-card-widget="maximize">
                                         <i class="fas fa-expand fa-lg"></i>
                                     </button>
                                 </div>
-                                <div class="container-fluid" style="display: none;">
+                                <div class="container-fluid overflow-auto" style="display: none; max-height: 15em">
 
                                     @if (count($comments) != null)
                                         @foreach ($comments as $comment)
                                             <div class="callout callout-info">
-                                                <h6 class="font-weight-bold">{{ Auth::user()->name ?? '' }}</h6>
+                                                <h6 class="font-weight-bold">{{ $comment->user->name ?? '' }}</h6>
                                                 <div class="row">
                                                     <p class="col">{{ $comment->comment }}</p>
                                                     @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
-                                                        <button type="button" class="btn">
+                                                        <button type="button" data-post="{{ $item->id ?? '' }}"
+                                                            data-comment="{{ $comment->id ?? '' }}"
+                                                            class="btn DestroyComment">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     @endif
                                                 </div>
-                                            </div>`
+                                            </div>
                                         @endforeach
                                     @endif
 
@@ -155,6 +176,9 @@
         $('#addForm [name=des]').summernote();
         $('#editForm [name=des]').summernote();
 
+
+
+        // Succee Msg Code ---
         if (`{{ Session::get('success') }}`) {
             Swal.fire({
                 position: 'top-end',
@@ -165,7 +189,7 @@
             })
         }
 
-
+        // Edit Pot Get Post Data
         $('.editPost').on('click', function() {
             let editUrl = $(this).data('edit');
             let updateUrl = $(this).data('update');
@@ -185,6 +209,7 @@
             });
         })
 
+        // Read More Code ---
         $(document).on('click', '.ReadMore', function() {
             let CardBody = $(this).parent().parent().parent().find('.card-body');
             if (CardBody.attr('class') == "card-body overflow-hidden") {
@@ -196,6 +221,7 @@
             }
         });
 
+        // Destroy Post Code ---
         $(document).on('click', '.destroyPost', function() {
             let destroyUrl = $(this).data('destroy')
             Swal.fire({
@@ -225,27 +251,21 @@
             })
         });
 
+        // Comment Box Extend Code ---
         $(document).on('click', '.PostComment', function() {
             let CommentBox = $(this).parent().siblings('.container-fluid');
             CommentBox.slideToggle();
-        })
+        });
 
+        // Comment Post Code ---
         $(document).on('submit', '.CommentPost', function(e) {
             e.preventDefault();
             let CommentText = $(this).find('input[name=comment]');
             let PostId = $(this).find('input[name=post_id]').val();
             let CommentBox = $(this).parent();
             let LastComment = $(this).parent().find('.callout:last');
-
-            let CommentTemp = `<div class="callout callout-info">
-                                                    <h6 class="font-weight-bold">{{ Auth::user()->name ?? '' }}</h6>
-                                                    <div class="row">
-                                                        <p class="col">${CommentText.val()}</p>
-                                                        <button type="button" class="btn">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>`;
+            let CommentCount = parseInt($(this).parent().siblings('.card-tools').find('.CommentCount').text());
+            let SetCommentCount = $(this).parent().siblings('.card-tools').find('.CommentCount');
 
             $.ajax({
                 type: "POST",
@@ -259,16 +279,137 @@
                 success: function(response) {
                     if (response.status) {
                         if (CommentBox.find('.callout').html() != null) {
-                            LastComment.after(CommentTemp);
+                            LastComment.after(response.comment);
                         } else {
-                            CommentBox.prepend(CommentTemp);
+                            CommentBox.prepend(response.comment);
                         }
                         CommentText.val('');
+                        SetCommentCount.text(CommentCount + 1);
                     }
                 }
             });
-            // $(this).find('input[name=comment]').val('')
+            $(this).find('input[name=comment]').val('')
+        });
+
+        // Destroy Comment Code ---
+        $(document).on('click', '.DestroyComment', function() {
+            let comment_id = $(this).data('comment');
+            let post_id = $(this).data('post');
+            let CommentTex = $(this).parent().parent();
+            console.log(CommentTex);
+
+            Swal.fire({
+                title: 'Are you sure delete this comment ?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: "POST",
+                        url: "{{ route('comment.destroy') }}",
+                        data: {
+                            'post_id': post_id,
+                            'comment_id': comment_id,
+                            '_token': "{{ csrf_token() }}"
+                        },
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.status) {
+                                CommentTex.remove();
+                                Swal.fire({
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: 'Comment deleted successfully.',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                })
+                            }
+                        }
+                    });
+
+                }
+            })
+
         })
+
+        // Like Event Code ---
+
+        $(document).on('click', '.PostLike', function() {
+            let PostId = $(this).data('post');
+            let IsLiked = $(this);
+            let LikeCount = parseInt($(this).siblings('.LikeCount').text());
+            let SetLikes = $(this).siblings('.LikeCount');
+
+            let HeartIcon = $(this).find('i');
+
+            console.log(IsLiked.val());
+            if (IsLiked.val() == 'false') {
+
+                Swal.fire({
+                    title: 'Post Liked.',
+                    imageUrl: 'https://icons-for-free.com/iconfiles/png/512/instagram+like+notification+icon-1320184017391732020.png',
+                    imageWidth: 300,
+                    imageHeight: 300,
+                    animation: true,
+                    showConfirmButton: false,
+                    timer: 1000
+                })
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('like.store') }}",
+                    data: {
+                        'is_liked': 1,
+                        'post_id': PostId,
+                        'user_id': "{{ Auth::user()->id }}",
+                        '_token': "{{ csrf_token() }}"
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.status) {
+                            HeartIcon.attr('class', 'fa fa-heart fa-lg text-danger');
+                            SetLikes.text(LikeCount + 1);
+                            IsLiked.val('true');
+                        }
+                    }
+                });
+            }
+
+            if (IsLiked.val() == 'true') {
+                Swal.fire({
+                    title: 'Post Disliked.',
+                    imageUrl: 'https://cdn2.iconfinder.com/data/icons/instagram-ui/48/jee-68-512.png',
+                    imageWidth: 300,
+                    imageHeight: 300,
+                    animation: false,
+                    showConfirmButton: false,
+                    timer: 1000
+                })
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('like.store') }}",
+                    data: {
+                        'is_liked': 0,
+                        'post_id': PostId,
+                        'user_id': "{{ Auth::user()->id }}",
+                        '_token': "{{ csrf_token() }}"
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.status) {
+                            HeartIcon.attr('class', 'far fa-heart fa-lg');
+                            IsLiked.val('false');
+                            SetLikes.text(LikeCount - 1);
+                        }
+                    }
+                });
+
+
+            }
+        });
+
 
     </script>
 @endsection

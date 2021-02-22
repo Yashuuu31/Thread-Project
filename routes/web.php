@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashbordController;
+use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserPostController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -32,4 +33,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Comments Route -----
     Route::post('comment/store', [CommentController::class, 'StoreComment'])->name('comment.store');
+    Route::post('comment/destroy', [CommentController::class, 'DestroyComment'])->name('comment.destroy');
+
+    // Like Route -----
+    Route::post('like/store', [LikeController::class, 'PostLike'])->name('like.store');
 });

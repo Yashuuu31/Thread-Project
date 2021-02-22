@@ -7,6 +7,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 
 use App\Helper\EventMsg;
+use App\Models\Like;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -39,6 +40,10 @@ class UserPostController extends Controller
         $post->title = $request->title;
         $post->des = $request->des;
         $post->save();
+
+        $createLike = new Like;
+        $createLike->post_id = $post->id;
+        $createLike->save();
 
         EventMsg::SuccessMsg("Post Uploded Successfully.");
         return redirect()->route("$this->route.index");
