@@ -122,8 +122,7 @@
                                         data-post="{{ $item->id ?? '' }}"><i class="{{ $heartIcon }}"></i></button>
                                     <span class="LikeCount">{{ count($likeUser) - 1 }}</span>
 
-                                    <button class="btn PostComment"><i
-                                            class="far fa-comment fa-lg"></i></button>
+                                    <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
                                     <span class="CommentCount">{{ count($comments) }}</span>
 
                                     <button type="button" class="btn float-right ReadMore" data-card-widget="maximize">
@@ -175,8 +174,6 @@
     <script>
         $('#addForm [name=des]').summernote();
         $('#editForm [name=des]').summernote();
-
-
 
         // Succee Msg Code ---
         if (`{{ Session::get('success') }}`) {
@@ -296,7 +293,9 @@
             let comment_id = $(this).data('comment');
             let post_id = $(this).data('post');
             let CommentTex = $(this).parent().parent();
-            console.log(CommentTex);
+            let CommentCount = parseInt($(this).parent().parent().parent().siblings('.card-tools').find('.CommentCount').text());
+            let SetCommentCount = $(this).parent().parent().parent().siblings('.card-tools').find('.CommentCount');
+
 
             Swal.fire({
                 title: 'Are you sure delete this comment ?',
@@ -319,6 +318,7 @@
                         success: function(response) {
                             if (response.status) {
                                 CommentTex.remove();
+                                SetCommentCount.text(CommentCount - 1);
                                 Swal.fire({
                                     position: 'top-end',
                                     icon: 'success',
@@ -336,7 +336,6 @@
         })
 
         // Like Event Code ---
-
         $(document).on('click', '.PostLike', function() {
             let PostId = $(this).data('post');
             let IsLiked = $(this);
@@ -409,7 +408,6 @@
 
             }
         });
-
 
     </script>
 @endsection
