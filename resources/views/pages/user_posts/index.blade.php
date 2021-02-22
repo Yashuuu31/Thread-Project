@@ -296,7 +296,6 @@
             let CommentCount = parseInt($(this).parent().parent().parent().siblings('.card-tools').find('.CommentCount').text());
             let SetCommentCount = $(this).parent().parent().parent().siblings('.card-tools').find('.CommentCount');
 
-
             Swal.fire({
                 title: 'Are you sure delete this comment ?',
                 icon: 'warning',
