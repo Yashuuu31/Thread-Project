@@ -21,4 +21,10 @@ class Comment extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+
+    public function master()
+    {
+        return $this->belongsTo(Comment::class, 'master_comment');
+    }
 }
