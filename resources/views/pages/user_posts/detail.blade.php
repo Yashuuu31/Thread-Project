@@ -22,27 +22,14 @@
             {!! $post->des !!}
         </div>
         @php
-            $comments = App\Models\Comment::where('post_id', $post->id)->get();
-            $likes = App\Models\Like::where('post_id', $post->id)
-                ->where('user_id', Auth::user()->id)
-                ->first();
-            $favs = App\Models\FavoritePost::where('post_id', $post->id)
-                ->where('user_id', Auth::user()->id)
-                ->first();
-            $allLikes = App\Models\Like::where('post_id', $post->id)
-                ->where('is_liked', '1')
-                ->get();
             $heartIcon = 'far fa-heart fa-lg';
-            
             $isLiked = '0';
-            $likeCount = '0';
             if ($likes) {
                 if ($likes->is_liked == 1) {
                     $isLiked = '1';
                     $heartIcon = 'fa fa-heart fa-lg text-danger';
                 }
             }
-            $likeCount = count($allLikes);
             $starIcon = 'far fa-star fa-lg';
             $isFav = '0';
             if ($favs) {
@@ -56,7 +43,7 @@
             <div class="card-tools">
                 <button class="btn PostLike" value="{{ $isLiked }}" data-post="{{ $post->id ?? '' }}"><i
                         class="{{ $heartIcon }}"></i></button>
-                <span class="LikeCount">{{ $likeCount }}</span>
+                <span class="LikeCount">{{ count($allLikes) ?? '0'}}</span>
 
                 <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
                 <span class="CommentCount">{{ count($comments) }}</span>
@@ -69,52 +56,57 @@
             </div>
             <div class="container-fluid overflow-auto" style="display: none">
 
-                @if (count($comments) != null)
-                    @foreach ($comments as $comment)
-                        @if ($comment->master_comment == 0)
-                        <div class="callout callout-info">
-                            <h6 class="font-weight-bold">{{ $comment->user->name ?? '' }}</h6>
-                            <div class="row">
-                                <p class="col">{{ $comment->comment }}</p>
-                                <button type="button" data-post="{{ $post->id ?? '' }}"
-                                    data-comment="{{ $comment->id }}" class="btn ReplyComment">
-                                    <i class="fas fa-reply text-success"></i>
-                                </button>
-                                @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
-
-                                    <button type="button" data-post="{{ $post->id ?? '' }}"
-                                        data-comment="{{ $comment->id ?? '' }}" class="btn DestroyComment">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-
-                                @endif
-
-                            </div>
-                            @foreach ($comments as $comm)
-                                @if ($comm->master_comment != 0 && $comm->master_comment == $comment->id)
-                                <div class="callout callout-danger col-md-8 offset-md-1">
-                                    <h6 class="font-weight-bold">{{ $comm->user->name ?? '' }}</h6>
+                <div class="container-fluid CommentDiv">
+                    @if (count($comments) != null)
+                        @foreach ($comments as $comment)
+                            @if ($comment->master_comment == 0)
+                                <div class="callout callout-danger CommentBox" id="{{ $comment->id }}"
+                                    data-id="{{ $comment->id ?? '' }}">
+                                    <h6 class="font-weight-bold">{{ $comment->user->name ?? '' }}</h6>
                                     <div class="row">
-                                        <p class="col">{{ $comm->comment }}</p>
+                                        <p class="col">{{ $comment->comment }}</p>
+                                        <button type="button" data-post="{{ $post->id ?? '' }}"
+                                            data-comment="{{ $comment->id }}" class="btn ReplyComment">
+                                            <i class="fas fa-reply text-success"></i>
+                                        </button>
                                         @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
 
-                                        <button type="button" data-post="{{ $post->id ?? '' }}"
-                                            data-comment="{{ $comm->id ?? '' }}" class="btn DestroyComment">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-    
-                                    @endif
+                                            <button type="button" data-post="{{ $post->id ?? '' }}"
+                                                data-comment="{{ $comment->id ?? '' }}" class="btn DestroyComment">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+
+                                        @endif
                                     </div>
+
+                                    @foreach ($comments as $comm)
+                                        @if ($comm->master_comment != 0 && $comm->master_comment == $comment->id)
+                                            <div class="callout callout-danger col-md-8 offset-md-1">
+                                                <h6 class="font-weight-bold">{{ $comm->user->name ?? '' }}</h6>
+                                                <div class="row">
+                                                    <p class="col">{{ $comm->comment }}</p>
+                                                    @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
+
+                                                        <button type="button" data-post="{{ $post->id ?? '' }}"
+                                                            data-comment="{{ $comm->id ?? '' }}"
+                                                            class="btn DestroyComment">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endforeach
                                 </div>
-                                @endif
-                            @endforeach
-                        </div>
-                        @endif
-                    @endforeach
-                @endif
+                            @endif
+                        @endforeach
+                    @endif
+                </div>
 
-                <form action="{{ route('comment.store') }}" method="POST" class="CommentPost" autocomplete="off">
-
+                <form action="{{ route('comment.store') }}" data-master="0" method="POST" class="CommentPost"
+                    autocomplete="off">
+                    <div class="MasterComment"></div>
                     <div class="input-group mt-4">
                         <input type="hidden" name="post_id" value="{{ $post->id ?? '' }}">
                         <input type="text" name="comment" placeholder="Type Comment..." class="form-control">
@@ -342,45 +334,66 @@
         // Comment Post Code ---
         $(document).on('submit', '.CommentPost', function(e) {
             e.preventDefault();
-            let CommentText = $(this).find('input[name=comment]');
-            let PostId = $(this).find('input[name=post_id]').val();
-            let CommentBox = $(this).parent();
-            let LastComment = $(this).parent().find('.callout:last');
-            let CommentCount = parseInt($(this).parent().siblings('.card-tools').find('.CommentCount').text());
-            let SetCommentCount = $(this).parent().siblings('.card-tools').find('.CommentCount');
-            let ChildComment = $(this).find('.callout').data('master');
-            let MasterCommentId = 0;
-            let CommentForm =  $(this);
-            if (ChildComment) {
-                MasterCommentId = ChildComment;
+            let CommentDiv = $(this).siblings('.CommentDiv');
+            let CommentItem = {
+                text: $(this).find('input[name=comment]').val(),
+                post_id: $(this).find('input[name=post_id]').val(),
+                master_id: $(this).data('master'),
             }
+            // console.log(CommentItem.master_id);
+            
+            let CommentTemp = '';
+            let ReplayTemp = '';
 
-           
+            
             $.ajax({
                 type: "POST",
                 url: "{{ route('comment.store') }}",
                 data: {
-                    'master_id': MasterCommentId,
-                    post_id: PostId,
-                    comment: CommentText.val(),
+                    'master_id': CommentItem.master_id,
+                    'comment': CommentItem.text,
+                    'post_id': CommentItem.post_id,
                     '_token': "{{ csrf_token() }}"
                 },
                 dataType: "json",
                 success: function(response) {
                     if (response.status) {
-                        CommentForm.attr('class', 'CommentPost');
-                        if (CommentBox.find('.callout').html() != null) {
-                            LastComment.after(response.comment);
-                        } else {
-                            CommentBox.prepend(response.comment);
+                        CommentTemp = `<div class="callout callout-danger CommentBox" id="${response.comment.id}">
+                                        <h6 class="font-weight-bold">{{ Auth::user()->name }}</h6>
+                                        <div class="row">
+                                            <p class="col">${CommentItem.text}</p>
+                                            <button type="button" data-post="{{ $post->id ?? '' }}"
+                                                data-comment="${response.comment.id}" class="btn ReplyComment">
+                                                <i class="fas fa-reply text-success"></i>
+                                            </button>
+                                                <button type="button" data-post="{{ $post->id ?? '' }}"
+                                                    data-comment="${response.comment.id}" class="btn DestroyComment">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                        </div>`;
+
+                        ReplayTemp = `<div class="callout callout-danger col-md-8 offset-md-1">
+                                            <h6 class="font-weight-bold">{{ Auth::user()->name }}</h6>
+                                            <div class="row">
+                                                <p class="col">${CommentItem.text}</p>
+                                                    <button type="button" data-post="{{ $post->id ?? '' }}"
+                                                        data-comment="${response.comment.id}" class="btn DestroyComment">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                            </div>`;
+
+                        if(CommentItem.master_id != 0){
+                            CommentDiv.find(`#${CommentItem.master_id}`).append(ReplayTemp)
+                        }else{
+                            CommentDiv.append(CommentTemp);
                         }
-                        CommentText.val('');
-                        SetCommentCount.text(CommentCount + 1);
-                        
                     }
                 }
             });
-            $(this).find('input[name=comment]').val('')
+            $(this).find('input[name=comment]').val('');
+            $(this).find('.MasterComment').html('');
+            $(this).attr('class', 'CommentPost');
+            $(this).data('master', '0');
         });
 
         // Destroy Comment Code ---
@@ -430,36 +443,44 @@
 
         })
 
-        // Replay Comment Code---
+        // Comment Replay Code
         $(document).on('click', '.ReplyComment', function() {
-            let FormBox = $(this).parent().parent().siblings('form.CommentPost');
-            let CommentTex = $(this).siblings('p.col').text();
-            let CommentUser = $(this).parent().siblings('h6.font-weight-bold').text();
-            let CommentId = $(this).data('comment');
-
-            let ReplyTemp = `<div class="callout callout-info" data-master="${CommentId}">
-                                <h6 class="font-weight-bold">${CommentUser}</h6>
-                                <div class="row">
-                                    <p class="col">${CommentTex}</p>
-                                    <button type="button" class="btn RmReplyComment">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>`;
-            if (!FormBox.find('.card-body').lenght) {
-
-                FormBox.attr('class', 'CommentPost card-body bg-white shadow');
-                FormBox.prepend(ReplyTemp);
+            let Master = {
+                text: $(this).siblings('p.col').text(),
+                username: $(this).parent().siblings('h6').text(),
+                comment_id: $(this).data('comment')
             }
-        });
-
-        // Remove Comment Replay Code ---
-        $(document).on('click', '.RmReplyComment', function() {
-            let FormBox = $(this).parent().parent().parent();
-            FormBox.attr('class', 'CommentPost');
-            FormBox.find('.callout:last').remove()
-
+            let CommentForm = {
+                FormDiv: $(this).parents('.overflow-auto').find('.CommentPost'),
+                MasterComment: $(this).parents('.overflow-auto').find('.CommentPost .MasterComment'),
+            }
+            console.log(Master);
+            let CommentTemp = `
+                    <div class="callout callout-danger">
+                                            <h6 class="font-weight-bold">${Master.username}</h6>
+                                            <div class="row">
+                                                <p class="col">${Master.text}</p>
+                                                <span class="btn ReplyCancel">
+                                                    <i class="fa fa-times"></i>    
+                                                </span>
+                                            </div>
+                    </div>
+                    `;
+            CommentForm.MasterComment.html(CommentTemp);
+            CommentForm.FormDiv.data('master', `${Master.comment_id}`);
+            CommentForm.FormDiv.attr('class', 'CommentPost card-body bg-white');
         })
+
+        $(document).on('click', '.ReplyCancel', function() {
+            let Master = {
+                comment: $(this).parents('.MasterComment'),
+            }
+
+            Master.comment.html('');
+            Master.comment.parent().data('master', `0`);
+            Master.comment.parent().attr('class', 'CommentPost');
+
+        });
 
     </script>
 @endsection

@@ -102,7 +102,7 @@
                             </div>
                             <!-- Comment & Like Find Code -->
                             @php
-                                $comments = App\Models\Comment::where('post_id', $item->id)->get();
+                                
                                 $likes = App\Models\Like::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
                                 $favs = App\Models\FavoritePost::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
                                 $allLikes = App\Models\Like::where('post_id', $item->id)->where('is_liked', '1')->get();
@@ -133,8 +133,7 @@
                                         data-post="{{ $item->id ?? '' }}"><i class="{{ $heartIcon }}"></i></button>
                                     <span class="LikeCount">{{ $likeCount }}</span>
 
-                                    <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
-                                    <span class="CommentCount">{{ count($comments) }}</span>
+                                    <span class="CommentCount"></span>
 
                                     <a href="{{ route('user_posts.show', $item->id)}}" class="float-right mt-1">Read More</a>
 
@@ -142,25 +141,26 @@
                                         <i class="{{ $starIcon ?? ''}}"></i>
                                     </button>
                                 </div>
-                                <div class="container-fluid overflow-auto" style="display: none; max-height: 15em">
-
-                                    @if (count($comments) != null)
-                                        @foreach ($comments as $comment)
-                                            <div class="callout callout-info">
-                                                <h6 class="font-weight-bold">{{ $comment->user->name ?? '' }}</h6>
-                                                <div class="row">
-                                                    <p class="col">{{ $comment->comment }}</p>
-                                                    @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
-                                                        <button type="button" data-post="{{ $item->id ?? '' }}"
-                                                            data-comment="{{ $comment->id ?? '' }}"
-                                                            class="btn DestroyComment">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    @endif
+                                {{-- <div class="container-fluid overflow-auto" style="display: none; max-height: 15em">
+                                    <div class="container-fluid CommentDiv">
+                                        @if (count($comments) != null)
+                                            @foreach ($comments as $comment)
+                                                <div class="callout callout-danger">
+                                                    <h6 class="font-weight-bold">{{ $comment->user->name ?? '' }}</h6>
+                                                    <div class="row">
+                                                        <p class="col">{{ $comment->comment }}</p>
+                                                        @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
+                                                            <button type="button" data-post="{{ $item->id ?? '' }}"
+                                                                data-comment="{{ $comment->id ?? '' }}"
+                                                                class="btn DestroyComment">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        @endif
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        @endforeach
-                                    @endif
+                                            @endforeach
+                                        @endif
+                                    </div>
 
                                     <form action="" method="POST" class="CommentPost" autocomplete="off">
                                         <div class="input-group mt-4">
@@ -172,7 +172,7 @@
                                             </span>
                                         </div>
                                     </form>
-                                </div>
+                                </div> --}}
                             </div>
                         </div>
                     </div>
@@ -270,35 +270,37 @@
         // Comment Post Code ---
         $(document).on('submit', '.CommentPost', function(e) {
             e.preventDefault();
-            let CommentText = $(this).find('input[name=comment]');
-            let PostId = $(this).find('input[name=post_id]').val();
-            let CommentBox = $(this).parent();
-            let LastComment = $(this).parent().find('.callout:last');
-            let CommentCount = parseInt($(this).parent().siblings('.card-tools').find('.CommentCount').text());
-            let SetCommentCount = $(this).parent().siblings('.card-tools').find('.CommentCount');
-
+            let CommentDiv = $(this).siblings('.CommentDiv');
+            let CommentItem = {
+                text: $(this).find('input[name=comment]').val(),
+                post_id: $(this).find('input[name=post_id]').val(),
+            }
+            let CommentTemp = '';
             $.ajax({
                 type: "POST",
                 url: "{{ route('comment.store') }}",
                 data: {
-                    post_id: PostId,
-                    comment: CommentText.val(),
+                    'comment': CommentItem.text,
+                    'post_id': CommentItem.post_id,
                     '_token': "{{ csrf_token() }}"
                 },
                 dataType: "json",
                 success: function(response) {
-                    if (response.status) {
-                        if (CommentBox.find('.callout').html() != null) {
-                            LastComment.after(response.comment);
-                        } else {
-                            CommentBox.prepend(response.comment);
-                        }
-                        CommentText.val('');
-                        SetCommentCount.text(CommentCount + 1);
+                    if(response.status){
+                        CommentTemp = `<div class="callout callout-danger">
+                                    <h6 class="font-weight-bold">{{ Auth::user()->name }}</h6>
+                                    <div class="row">
+                                        <p class="col">${CommentItem.text}</p>
+                                            <button type="button" data-post="{{ $item->id ?? '' }}"
+                                                data-comment="${response.comment.id}" class="btn DestroyComment">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                    </div>`;
+                        CommentDiv.append(CommentTemp);
                     }
                 }
             });
-            $(this).find('input[name=comment]').val('')
+            $(this).find('input[name=comment]').val('');
         });
 
         // Destroy Comment Code ---
@@ -486,7 +488,7 @@
 
         });
 
-        // 
+        
 
     </script>
 @endsection

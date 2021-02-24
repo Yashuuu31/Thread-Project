@@ -7,6 +7,8 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 
 use App\Helper\EventMsg;
+use App\Models\Comment;
+use App\Models\FavoritePost;
 use App\Models\Like;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +50,17 @@ class UserPostController extends Controller
     public function show($id)
     {
         $post = Post::find($id);
-        return view("{$this->view}/detail", compact('post'));
+        $comments = Comment::where('post_id', $id)->get();
+        $likes = Like::where('post_id', $post->id)
+                ->where('user_id', Auth::user()->id)
+                ->first();
+        $favs = FavoritePost::where('post_id', $post->id)
+                ->where('user_id', Auth::user()->id)
+                ->first();
+        $allLikes = Like::where('post_id', $post->id)
+                ->where('is_liked', '1')
+                ->get();
+        return view("{$this->view}/detail", compact('post', 'comments', 'likes', 'favs', 'allLikes'));
     }
 
     public function edit($id)
