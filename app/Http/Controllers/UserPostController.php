@@ -23,8 +23,11 @@ class UserPostController extends Controller
     {
         $moduleName = $this->moduleName;
         $UserPosts = Post::all();
-        
-        return view("$this->view/index", compact('moduleName', 'UserPosts'));
+        $allLikes = Post::with(['like' => function($query){
+            $query->where('likes.is_liked', '1');
+        }])->count();
+        // dd($allLikes->count());
+        return view("$this->view/index", compact('moduleName', 'UserPosts', 'allLikes'));
     }
 
 

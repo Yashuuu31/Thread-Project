@@ -14,6 +14,7 @@ class CommentController extends Controller
     {
         $request->validate([
             'post_id' => 'required|numeric',
+            'master_id' => 'required|numeric',
             'comment' => 'required',
         ]);
         // dd($request->master_id);
@@ -23,10 +24,12 @@ class CommentController extends Controller
         $comment->master_comment = $request->master_id;
         $comment->comment = $request->comment;
         $comment->save();
-
+        
+        $allComments = Comment::where('post_id', $request->post_id)->get();
         return response()->json([
             'status' => true,
-            'comment' => $comment
+            'comment' => $comment,
+            'allComment' => count($allComments)
         ]);
     }
 
@@ -38,10 +41,19 @@ class CommentController extends Controller
         ]);
 
         $comment = Comment::find($request->comment_id);
+        
         if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id){
             $comment->delete();
+            $childComment = Comment::where('master_comment', $comment->id)->delete();
+            // if(count($childComment) != 0){
+            //     foreach($childComment as $comm){
+            //         $comm->delete();
+            //     }
+            // }
+            $allComments = Comment::where('post_id', $request->post_id)->get();
             return response()->json([
-                'status' => true
+                'status' => true,
+                'allComment' => count($allComments)
             ]);
         }
     }

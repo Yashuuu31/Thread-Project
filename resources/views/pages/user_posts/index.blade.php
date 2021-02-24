@@ -105,11 +105,11 @@
                                 
                                 $likes = App\Models\Like::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
                                 $favs = App\Models\FavoritePost::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
-                                $allLikes = App\Models\Like::where('post_id', $item->id)->where('is_liked', '1')->get();
+                                // $allLikes = App\Models\Like::where('post_id', $item->id)->where('is_liked', '1')->get();
                                 $heartIcon = 'far fa-heart fa-lg';
                                 $starIcon = 'far fa-star fa-lg';
                                 $isLiked = '0';
-                                $likeCount = count($allLikes);
+                                // $likeCount = count($allLikes);
                                 if($likes){
                                     if($likes->is_liked == 1){
                                         $isLiked = '1';
@@ -131,7 +131,7 @@
                                 <div class="card-tools">
                                     <button class="btn PostLike" value="{{ $isLiked ?? ''}}"
                                         data-post="{{ $item->id ?? '' }}"><i class="{{ $heartIcon }}"></i></button>
-                                    <span class="LikeCount">{{ $likeCount }}</span>
+                                    <span class="LikeCount">{{ $allLikes }}</span>
 
                                     <span class="CommentCount"></span>
 
