@@ -43,7 +43,7 @@
             <div class="card-tools">
                 <button class="btn PostLike" value="{{ $isLiked }}" data-post="{{ $post->id ?? '' }}"><i
                         class="{{ $heartIcon }}"></i></button>
-                <span class="LikeCount">{{ count($allLikes) ?? '0'}}</span>
+                <span class="LikeCount">{{ count($allLikes) ?? ''}}</span>
 
                 <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
                 <span class="CommentCount">{{ count($comments) }}</span>
