@@ -21,45 +21,27 @@
         <div class="card-body">
             {!! $post->des !!}
         </div>
-        @php
-            $heartIcon = 'far fa-heart fa-lg';
-            $isLiked = '0';
-            if ($likes) {
-                if ($likes->is_liked == 1) {
-                    $isLiked = '1';
-                    $heartIcon = 'fa fa-heart fa-lg text-danger';
-                }
-            }
-            $starIcon = 'far fa-star fa-lg';
-            $isFav = '0';
-            if ($favs) {
-                if ($favs->is_fav) {
-                    $isFav = '1';
-                    $starIcon = 'fa fa-star fa-lg';
-                }
-            }
-        @endphp
+        
         <div class="card-footer">
             <div class="card-tools">
-                <button class="btn PostLike" value="{{ $isLiked }}" data-post="{{ $post->id ?? '' }}"><i
-                        class="{{ $heartIcon }}"></i></button>
-                <span class="LikeCount">{{ count($allLikes) ?? '' }}</span>
+                <button class="btn PostLike" value="{{ count($post->isLiked) != 0 ? '1' : '0' }}" data-post="{{ $post->id ?? '' }}"><i
+                        class="{{ count($post->isLiked) != 0 ? 'fa fa-heart fa-lg text-danger' : 'far fa-heart fa-lg' }}"></i></button>
+                <span class="LikeCount">{{ count($post->allLikes) }}</span>
 
                 <button class="btn PostComment"><i class="far fa-comment fa-lg"></i></button>
-                <span class="CommentCount">{{ count($comments) }}</span>
+                <span class="CommentCount">{{ $commentCount ?? '0' }}</span>
 
                 <a href="{{ route('user_posts.index') }}" class="float-right mt-1">Home</a>
-                <button type="button" data-post="{{ $post->id ?? '' }}" value="{{ $isFav }}"
+                <button type="button" data-post="{{ $post->id ?? '' }}" value="{{ count($post->isFav) != 0 ? '1' : '0' }}"
                     class="btn float-right PostFav">
-                    <i class="{{ $starIcon ?? '' }}"></i>
+                    <i class="{{ count($post->isFav) != 0 ? 'fa fa-star fa-lg' : 'far fa-star fa-lg' }}"></i>
                 </button>
             </div>
             <div class="container-fluid overflow-auto" style="display: none">
 
                 <div class="container-fluid CommentDiv">
-                    @if (count($comments) != null)
+                    @if (count($comments) != 0)
                         @foreach ($comments as $comment)
-                            @if ($comment->master_comment == 0)
                             <div>
                                 <div class="callout callout-danger CommentBox" id="{{ $comment->id }}"
                                     data-id="{{ $comment->id ?? '' }}">
@@ -76,12 +58,10 @@
                                                 data-comment="{{ $comment->id ?? '' }}" class="btn DestroyComment">
                                                 <i class="fas fa-trash"></i>
                                             </button>
-
                                         @endif
                                     </div>
 
-                                    @foreach ($comments as $comm)
-                                        @if ($comm->master_comment != 0 && $comm->master_comment == $comment->id)
+                                    @foreach ($comment->Child as $comm)
                                             <div class="callout callout-danger col-md-8 offset-md-1">
                                                 <h6 class="font-weight-bold">{{ $comm->user->name ?? '' }}</h6>
                                                 <div class="row">
@@ -97,7 +77,7 @@
                                                     @endif
                                                 </div>
                                             </div>
-                                        @endif
+                                        
                                     @endforeach
                                 </div>
                                 <form action="{{ route('comment.store') }}" data-master="{{ $comment->id }}" method="POST"
@@ -113,7 +93,6 @@
                                     </div>
                                 </form>
                             </div>
-                            @endif
                         @endforeach
                     @endif
                 </div>
@@ -235,8 +214,8 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.status) {
+                            SetLikes.text(response.allLikes);
                             HeartIcon.attr('class', 'fa fa-heart fa-lg text-danger');
-                            SetLikes.text(LikeCount + 1);
                             IsLiked.val('1');
                         }
                     }
@@ -265,9 +244,9 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.status) {
+                            SetLikes.text(response.allLikes);
                             HeartIcon.attr('class', 'far fa-heart fa-lg');
                             IsLiked.val('0');
-                            SetLikes.text(LikeCount - 1);
                         }
                     }
                 });
@@ -312,7 +291,7 @@
                 Swal.fire({
                     position: 'top-end',
                     icon: 'success',
-                    title: 'Post Deleted Your Favorite List.',
+                    title: 'Post Removed Your Favorite List.',
                     showConfirmButton: false,
                     timer: 1500
                 })
@@ -345,6 +324,7 @@
             let CommentBox = $(this).parent().siblings('.container-fluid');
             CommentBox.slideToggle();
         });
+
         // Comment Post Code ---
         $(document).on('submit', '.CommentPost', function(e) {
             e.preventDefault();
@@ -354,7 +334,6 @@
                 post_id: $(this).find('input[name=post_id]').val(),
                 master_id: $(this).data('master'),
             }
-            // console.log(CommentItem.master_id);
 
             let CommentTemp = '';
             let ReplayTemp = '';
@@ -428,8 +407,6 @@
             let comment_id = $(this).data('comment');
             let post_id = $(this).data('post');
             let CommentTex = $(this).parent().parent();
-            
-
 
             Swal.fire({
                 title: 'Are you sure delete this comment ?',
@@ -480,11 +457,9 @@
             let Master = {
                 comment: $(this).parents('.MasterComment'),
             }
-
             Master.comment.html('');
             Master.comment.parent().data('master', `0`);
             Master.comment.parent().attr('class', 'CommentPost');
-
         });
 
     </script>

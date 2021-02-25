@@ -45,15 +45,10 @@ class CommentController extends Controller
         if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id){
             $comment->delete();
             $childComment = Comment::where('master_comment', $comment->id)->delete();
-            // if(count($childComment) != 0){
-            //     foreach($childComment as $comm){
-            //         $comm->delete();
-            //     }
-            // }
-            $allComments = Comment::where('post_id', $request->post_id)->get();
+            $allComments = Comment::where('post_id', $request->post_id)->count();
             return response()->json([
                 'status' => true,
-                'allComment' => count($allComments)
+                'allComment' => $allComments
             ]);
         }
     }

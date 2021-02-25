@@ -27,4 +27,9 @@ class Comment extends Model
     {
         return $this->belongsTo(Comment::class, 'master_comment');
     }
+
+    public function Child()
+    {
+        return $this->hasMany(Comment::class, 'master_comment', 'id');
+    }
 }

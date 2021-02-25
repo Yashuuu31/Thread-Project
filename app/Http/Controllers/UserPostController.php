@@ -23,11 +23,7 @@ class UserPostController extends Controller
     {
         $moduleName = $this->moduleName;
         $UserPosts = Post::all();
-        $allLikes = Post::with(['like' => function($query){
-            $query->where('likes.is_liked', '1');
-        }])->count();
-        // dd($allLikes->count());
-        return view("$this->view/index", compact('moduleName', 'UserPosts', 'allLikes'));
+        return view("$this->view/index", compact('moduleName', 'UserPosts'));
     }
 
 
@@ -38,8 +34,6 @@ class UserPostController extends Controller
 
     public function store(PostRequest $request)
     {
-        $request->validated();
-
         $post = new Post;
         $post->user_id = Auth::user()->id;
         $post->title = $request->title;
@@ -53,17 +47,15 @@ class UserPostController extends Controller
     public function show($id)
     {
         $post = Post::find($id);
-        $comments = Comment::where('post_id', $id)->get();
-        $likes = Like::where('post_id', $post->id)
-                ->where('user_id', Auth::user()->id)
-                ->first();
-        $favs = FavoritePost::where('post_id', $post->id)
-                ->where('user_id', Auth::user()->id)
-                ->first();
-        $allLikes = Like::where('post_id', $post->id)
-                ->where('is_liked', '1')
-                ->get();
-        return view("{$this->view}/detail", compact('post', 'comments', 'likes', 'favs', 'allLikes'));
+        $comments = Comment::where('post_id', $id)->where('master_comment', '0')->get();
+        $commentCount = Comment::where('post_id', $id)->count();
+        // $likes = Like::where('post_id', $post->id)
+        //         ->where('user_id', Auth::user()->id)
+        //         ->first();
+        // $favs = FavoritePost::where('post_id', $post->id)
+        //         ->where('user_id', Auth::user()->id)
+        //         ->first();
+        return view("{$this->view}/detail", compact('post', 'comments', 'commentCount'));
     }
 
     public function edit($id)
@@ -98,6 +90,9 @@ class UserPostController extends Controller
     {
         $post = Post::find($id);
         if (Auth::user()->id == $post->user_id) {
+            Comment::where('post_id', $id)->delete();
+            Like::where('post_id', $id)->delete();
+            FavoritePost::where('post_id', $id)->delete();
             EventMsg::SuccessMsg("Post Deleted Successfully.");
             $post->delete();
             return response()->json([

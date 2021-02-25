@@ -8,7 +8,7 @@
         <div class="card-body">
             <div class="row mx-2">
                 <h3 class="col">{{ $moduleName ?? '' }}</h3>
-                <button class="btn btn-primary" data-toggle="modal" data-target="#addPost">Add Post</button>
+                <button class="btn btn-primary addPost" data-toggle="modal" data-target="#addPost">Add Post</button>
             </div>
             <hr>
 
@@ -17,7 +17,8 @@
                 aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                     <div class="modal-content">
-                        <form action="{{ route('user_posts.store') }}" id="addForm" method="POST"> @csrf
+                        <form action="{{ route('user_posts.store') }}" id="addForm" method="POST"> @csrf 
+                            <input type="hidden" name="_method" value="">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="exampleModalLabel">Add Post</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -35,7 +36,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Uplode Post</button>
+                                <button type="submit" name="_submit" class="btn btn-primary">Uplode Post</button>
                             </div>
                         </form>
                     </div>
@@ -44,7 +45,7 @@
             <!-- Add Posts Modal End -->
 
             <!-- Edit Posts Modal Start -->
-            <div class="modal fade" id="editPost" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+            {{-- <div class="modal fade" id="editPost" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                     <div class="modal-content">
@@ -71,7 +72,7 @@
                         </form>
                     </div>
                 </div>
-            </div>
+            </div> --}}
             <!-- Edit Posts Modal End -->
 
 
@@ -83,7 +84,7 @@
                                 <h4 class="card-title">{{ $item->title ?? '' }}</h4>
                                 @if (Auth::user()->id == $item->user_id)
                                     <div class="card-tools">
-                                        <button type="button" data-target="#editPost" data-toggle="modal"
+                                        <button type="button" data-target="#addPost" data-toggle="modal"
                                             class="btn btn-tool editPost"
                                             data-edit="{{ route('user_posts.edit', $item->id) }}"
                                             data-update="{{ route('user_posts.update', $item->id) }}">
@@ -101,78 +102,17 @@
                                 {!! $item->des ?? '' !!}
                             </div>
                             <!-- Comment & Like Find Code -->
-                            @php
-                                
-                                $likes = App\Models\Like::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
-                                $favs = App\Models\FavoritePost::where('post_id', $item->id)->where('user_id', Auth::user()->id)->first();
-                                // $allLikes = App\Models\Like::where('post_id', $item->id)->where('is_liked', '1')->get();
-                                $heartIcon = 'far fa-heart fa-lg';
-                                $starIcon = 'far fa-star fa-lg';
-                                $isLiked = '0';
-                                // $likeCount = count($allLikes);
-                                if($likes){
-                                    if($likes->is_liked == 1){
-                                        $isLiked = '1';
-                                        $heartIcon = 'fa fa-heart fa-lg text-danger';
-                                    }
-                                }
-
-                                $isFav = '0';
-                               if($favs){
-                                    if($favs->is_fav == 1){
-                                        $isFav = '1';
-                                        $starIcon = 'fa fa-star fa-lg';
-                                    }
-                                }
-                                
-                            @endphp
-
                             <div class="card-footer">
                                 <div class="card-tools">
-                                    <button class="btn PostLike" value="{{ $isLiked ?? ''}}"
-                                        data-post="{{ $item->id ?? '' }}"><i class="{{ $heartIcon }}"></i></button>
-                                    <span class="LikeCount">{{ $allLikes }}</span>
-
-                                    <span class="CommentCount"></span>
-
+                                    <button class="btn PostLike" value="{{ count($item->isLiked) != 0 ? '1' : '0' }}"
+                                        data-post="{{ $item->id ?? '' }}"><i class="{{ count($item->isLiked) != 0 ? 'fa fa-heart fa-lg text-danger' : 'far fa-heart fa-lg' }}"></i></button>
+                                    <span class="LikeCount">{{ count($item->allLikes)}}</span>
                                     <a href="{{ route('user_posts.show', $item->id)}}" class="float-right mt-1">Read More</a>
 
-                                    <button type="button" data-post="{{ $item->id ?? ''}}" value="{{$isFav}}" class="btn float-right PostFav">
-                                        <i class="{{ $starIcon ?? ''}}"></i>
+                                    <button type="button" data-post="{{ $item->id ?? ''}}" value="{{ count($item->isFav) != 0 ? '1' : '0' }}" class="btn float-right PostFav">
+                                        <i class="{{ count($item->isFav) != 0 ? 'fa fa-star fa-lg' : 'far fa-star fa-lg' }}"></i>
                                     </button>
                                 </div>
-                                {{-- <div class="container-fluid overflow-auto" style="display: none; max-height: 15em">
-                                    <div class="container-fluid CommentDiv">
-                                        @if (count($comments) != null)
-                                            @foreach ($comments as $comment)
-                                                <div class="callout callout-danger">
-                                                    <h6 class="font-weight-bold">{{ $comment->user->name ?? '' }}</h6>
-                                                    <div class="row">
-                                                        <p class="col">{{ $comment->comment }}</p>
-                                                        @if (Auth::user()->id == $comment->user_id || $comment->post->user_id == Auth::user()->id)
-                                                            <button type="button" data-post="{{ $item->id ?? '' }}"
-                                                                data-comment="{{ $comment->id ?? '' }}"
-                                                                class="btn DestroyComment">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        @endif
-                                    </div>
-
-                                    <form action="" method="POST" class="CommentPost" autocomplete="off">
-                                        <div class="input-group mt-4">
-                                            <input type="hidden" name="post_id" value="{{ $item->id ?? '' }}">
-                                            <input type="text" name="comment" placeholder="Type Comment..."
-                                                class="form-control">
-                                            <span class="input-group-append">
-                                                <button type="submit" class="btn btn-primary">Send</button>
-                                            </span>
-                                        </div>
-                                    </form>
-                                </div> --}}
                             </div>
                         </div>
                     </div>
@@ -186,7 +126,6 @@
 @section('page-script')
     <script>
         $('#addForm [name=des]').summernote();
-        $('#editForm [name=des]').summernote();
 
         // Succee Msg Code ---
         if (`{{ Session::get('success') }}`) {
@@ -199,25 +138,39 @@
             })
         }
 
+        // Add Post Code ---
+        $(document).on('click','.addPost',function(){
+            $('#exampleModalLabel').text('Add Form');
+            $('#addForm').attr('action', `{{ route('user_posts.store')}}`);
+            $('#addForm [name=_submit]').text('Upload Post');
+            $('#addForm [name=_method]').val('');
+            $('#addForm [name=title]').val('');
+            $('#addForm [name=des]').summernote('code', '');
+            $('#addForm [name=des]').html('');
+        });
+
         // Edit Pot Get Post Data
         $('.editPost').on('click', function() {
             let editUrl = $(this).data('edit');
             let updateUrl = $(this).data('update');
             // console.log(updateUrl);
-            $('#editForm').attr('action', updateUrl);
+            $('#exampleModalLabel').text('Edit Form');
+            $('#addForm [name=_submit]').text('Update Post');
+            $('#addForm').attr('action', updateUrl);
+            $('#addForm [name=_method]').val('PUT');
             $.ajax({
                 type: "GET",
                 url: editUrl,
                 dataType: "json",
                 success: function(response) {
                     if (response.status) {
-                        $("#editForm [name=title]").val(response.data.title);
-                        $("#editForm [name=des]").html(response.data.des);
-                        $('#editForm [name=des]').summernote('code', response.data.des);
+                        $("#addForm [name=title]").val(response.data.title);
+                        $("#addForm [name=des]").html(response.data.des);
+                        $('#addForm [name=des]').summernote('code', response.data.des);
                     }
                 }
             });
-        })
+        });
 
         // Read More Code ---
         $(document).on('click', '.ReadMore', function() {
@@ -383,8 +336,8 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.status) {
+                            SetLikes.text(response.allLikes);
                             HeartIcon.attr('class', 'fa fa-heart fa-lg text-danger');
-                            SetLikes.text(LikeCount + 1);
                             IsLiked.val('1');
                         }
                     }
@@ -413,9 +366,9 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.status) {
+                            SetLikes.text(response.allLikes);
                             HeartIcon.attr('class', 'far fa-heart fa-lg');
                             IsLiked.val('0');
-                            SetLikes.text(LikeCount - 1);
                         }
                     }
                 });
@@ -460,7 +413,7 @@
                 Swal.fire({
                     position: 'top-end',
                     icon: 'success',
-                    title: 'Post Deleted Your Favorite List.',
+                    title: 'Post Removed Your Favorite List.',
                     showConfirmButton: false,
                     timer: 1500
                 })

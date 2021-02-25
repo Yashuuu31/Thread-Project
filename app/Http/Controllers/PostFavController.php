@@ -28,7 +28,7 @@ class PostFavController extends Controller
             $favPost = new FavoritePost;
             $favPost->post_id = $request->post_id;
             $favPost->user_id = Auth::user()->id;
-            $favPost->is_favs = 1;
+            $favPost->is_fav = 1;
             $favPost->save();  
         }
         

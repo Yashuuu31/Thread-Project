@@ -31,9 +31,11 @@ class LikeController extends Controller
             $like->save();  
         }
         
+        $allLikes = Like::where('post_id', $request->post_id)->where('is_liked', '!=', '0')->count();
 
         return response()->json([
-            'status' => true
+            'status' => true,
+            'allLikes' => $allLikes
         ]);
     }
 }
