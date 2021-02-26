@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\User;
+use App\Notifications\TestNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use phpDocumentor\Reflection\PseudoTypes\True_;
@@ -25,6 +26,23 @@ class CommentController extends Controller
         $comment->comment = $request->comment;
         $comment->save();
         
+        $user = $comment->post->user;
+        $matserUser = null;
+        if($comment->master_comment != 0 ){
+            $matserUser = $comment->master->user;
+        }
+        if(Auth::user()->id != $user->id){
+            $details = [
+                'user' => Auth::user()->name,
+                'message' => "Comment on {$comment->post->title}",
+                'post_id' => $comment->post_id
+            ];
+
+            if($matserUser){
+                $matserUser->notify(new TestNotification($details));
+            }
+            $user->notify(new TestNotification($details));
+        }
         $allComments = Comment::where('post_id', $request->post_id)->get();
         return response()->json([
             'status' => true,

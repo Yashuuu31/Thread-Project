@@ -3,8 +3,11 @@
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashbordController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostFavController;
 use App\Http\Controllers\UserPostController;
+use App\Models\User;
+use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -42,4 +45,5 @@ Route::middleware(['auth'])->group(function () {
     // Favorite Post Route ---
     Route::post('favorite/store', [PostFavController::class, 'PostFav'])->name('favorite.store');
 
+    Route::post('notification/mark_read', [NotificationController::class, 'MarkAsRead'])->name('notification.read');
 }); 
