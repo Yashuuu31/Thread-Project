@@ -4,6 +4,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashbordController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PostFavController;
+use App\Http\Controllers\RelationShipController;
 use App\Http\Controllers\UserPostController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -41,5 +42,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Favorite Post Route ---
     Route::post('favorite/store', [PostFavController::class, 'PostFav'])->name('favorite.store');
+
+    Route::get('relation', [RelationShipController::class, 'index'])->name('relation');
 
 });
